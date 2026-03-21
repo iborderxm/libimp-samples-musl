@@ -61,7 +61,7 @@ jobs:
         export TOOLCHAIN_DIR=/tmp/mipsel-thingino-linux-musl_sdk-buildroot
         export PATH=${TOOLCHAIN_DIR}/bin:$PATH
         ls -ltr
-        rm -rf A1 T2* T30 T4*
+        rm -rf A1 T2* T30 T4* .git
         ./build.sh --make
         
     - name: clear build directory
