@@ -94,20 +94,6 @@ for folder in "${folders[@]}"; do
 	# Change to folder and remember to return later
 	pushd "$folder" > /dev/null
 
-	# libimp
-	if [ -d "libimp" ]; then
-		pushd "libimp" > /dev/null
-		if ! run_make_with_check "libimp/$folder"; then
-			overall_status=1
-			popd > /dev/null
-			popd > /dev/null
-			break
-		fi
-		popd > /dev/null
-	else
-		echo "libimp directory does not exist in $folder"
-	fi
-
 	# libsysutils
 	if [ -d "libsysutils" ]; then
 		pushd "libsysutils" > /dev/null
@@ -154,20 +140,6 @@ for folder in "${folders[@]}"; do
 		popd > /dev/null
 	else
 		echo "libsysutils directory does not exist in $folder"
-	fi
-
-	# libivs_inf
-	if [ -d "libivs_inf" ]; then
-		pushd "libivs_inf" > /dev/null
-		if ! run_make_with_check "libivs_inf/$folder"; then
-			overall_status=1
-			popd > /dev/null
-			popd > /dev/null
-			break
-		fi
-		popd > /dev/null
-	else
-		echo "libivs_inf directory does not exist in $folder"
 	fi
 
 	popd > /dev/null
