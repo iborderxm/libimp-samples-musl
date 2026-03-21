@@ -81,6 +81,66 @@ run_make_with_check() {
 	return 0
 }
 
+# Function to check all SO files for SU_CIPHER functions
+check_all_so_files() {
+	local lib_dir="$1"
+	
+	echo "========================================"
+	echo "Checking all SO files in $lib_dir for SU_CIPHER functions..."
+	echo "========================================"
+	
+	if [ ! -d "$lib_dir" ]; then
+		echo "Error: Directory $lib_dir does not exist"
+		return 1
+	fi
+	
+	local has_so_files=0
+	local found_cipher_files=0
+	
+	# Find all SO files
+	so_files=$(find "$lib_dir" -name "*.so" 2>/dev/null)
+	
+	if [ -z "$so_files" ]; then
+		echo "No SO files found in $lib_dir"
+		return 0
+	fi
+	
+	# Check each SO file
+	for so_file in $so_files; do
+		has_so_files=1
+		local base_name=$(basename "$so_file")
+		
+		if command -v mipsel-linux-objdump > /dev/null; then
+			SU_CIPHER_COUNT=$(mipsel-linux-objdump -T "$so_file" 2>/dev/null | grep -c "SU_CIPHER_" || echo "0")
+		elif command -v mipsel-linux-nm > /dev/null; then
+			SU_CIPHER_COUNT=$(mipsel-linux-nm -D "$so_file" 2>/dev/null | grep -c "SU_CIPHER_" || echo "0")
+		else
+			SU_CIPHER_COUNT="unknown"
+		fi
+		
+		if [ "$SU_CIPHER_COUNT" != "0" ] && [ "$SU_CIPHER_COUNT" != "unknown" ]; then
+			echo "$base_name: Found $SU_CIPHER_COUNT SU_CIPHER functions"
+			found_cipher_files=1
+		elif [ "$SU_CIPHER_COUNT" = "unknown" ]; then
+			echo "$base_name: Cannot check (objdump/nm not available)"
+		else
+			echo "$base_name: No SU_CIPHER functions found"
+		fi
+	done
+	
+	if [ $has_so_files -eq 1 ]; then
+		echo "========================================"
+		if [ $found_cipher_files -eq 0 ]; then
+			echo "No SO files in $lib_dir contain SU_CIPHER functions"
+		else
+			echo "Some SO files in $lib_dir contain SU_CIPHER functions"
+		fi
+		echo "========================================"
+	fi
+	
+	return 0
+}
+
 # Define list of base directories
 folders=("T31")
 
@@ -93,6 +153,9 @@ for folder in "${folders[@]}"; do
 
 	# Change to folder and remember to return later
 	pushd "$folder" > /dev/null
+
+	# Check all SO files for SU_CIPHER functions
+	check_all_so_files "lib/uclibc"
 
 	# libsysutils
 	if [ -d "libsysutils" ]; then
