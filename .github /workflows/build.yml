@@ -1,0 +1,86 @@
+# 此入门工作流用于在 Linux 平台上使用 GCC 编译器构建 CMake 项目
+name: build
+
+on:
+  workflow_dispatch:
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.target_arch }}-gcc
+      cancel-in-progress: true
+
+    strategy:
+      matrix:
+        build_type: [Release]
+        target_arch: [mipsel]
+        include:
+          - os: ubuntu-latest
+            target_arch: mipsel
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Sync Submodules
+      run: |
+        git submodule update --init --recursive
+        echo "nproc:$(nproc)"
+
+    - name: Set reusable strings
+      # 将重复的输入字符串（如构建输出目录）转换为步骤输出。这些步骤输出可以在整个工作流文件中使用。
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        
+    - name: Install MIPS cross-compiler
+      if: matrix.target_arch == 'mipsel'
+      run: |
+        mkdir temp
+        cd temp
+        wget https://github.com/themactep/thingino-firmware/releases/download/toolchain-x86_64/thingino-toolchain-x86_64_xburst1_4_4_musl_gcc14-linux-mipsel.tar.gz
+        tar -xzf thingino-toolchain-x86_64_xburst1_4_4_musl_gcc14-linux-mipsel.tar.gz
+        mv mipsel-thingino-linux-musl_sdk-buildroot /tmp/
+        ls -ltr /tmp/mipsel-thingino-linux-musl_sdk-buildroot/
+        /tmp/mipsel-thingino-linux-musl_sdk-buildroot/relocate-sdk.sh
+        echo "/tmp/mipsel-thingino-linux-musl_sdk-buildroot/bin" >> $GITHUB_PATH
+        echo "TOOLCHAIN_DIR=/tmp/mipsel-thingino-linux-musl_sdk-buildroot" >> $GITHUB_ENV
+        echo "PATH=${TOOLCHAIN_DIR}/bin:$PATH" >> $GITHUB_ENV
+        cd ../
+        rm -rf temp
+
+    - name: Build
+      run: |
+        cd $GITHUB_WORKSPACE
+        export TOOLCHAIN_DIR=/tmp/mipsel-thingino-linux-musl_sdk-buildroot
+        export PATH=${TOOLCHAIN_DIR}/bin:$PATH
+        ls -ltr
+        ./build.sh --make
+        
+    - name: clear build directory
+      run: |
+        cd $GITHUB_WORKSPACE
+        ls -ltr
+        cd ../
+        mkdir build
+        cd build
+        mv $GITHUB_WORKSPACE/* ./
+        ls -ltr
+        cd $GITHUB_WORKSPACE
+        mv ../build ./
+        ls -ltr $GITHUB_WORKSPACE
+        ls -ltr $GITHUB_WORKSPACE/build/
+
+    - name: Upload build artifacts
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: libimp-samples-musl
+        path: ${{ steps.strings.outputs.build-output-dir }}
+        retention-days: 7
