@@ -82,7 +82,7 @@ run_make_with_check() {
 }
 
 # Define list of base directories
-folders=("A1" "T20" "T21" "T23" "T30" "T31" "T40" "T41")
+folders=("T31")
 
 # Track overall compilation status
 overall_status=0
