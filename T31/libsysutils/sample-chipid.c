@@ -1,16 +1,16 @@
 #include <sysutils/su_base.h>
-#include <sysutils/su_cipher.h>
 #include <stdio.h>
 #include <string.h>
+
+// Check if SU_CIPHER functions are available
+#ifdef SU_CIPHER_AVAILABLE
+#include <sysutils/su_cipher.h>
+#endif
 
 int main()
 {
 	SUDevID dev;
-	int ret, handle;
-	IN_UNF_CIPHER_CTRL ctrl;
-	unsigned int src_data[4] = {0x12345678, 0x87654321, 0x11223344, 0x44332211};
-	unsigned int enc_data[4] = {0};
-	unsigned int dec_data[4] = {0};
+	int ret;
 
 	printf("==============================================\n");
 	printf("Start testing sysutils APIs\n");
@@ -27,6 +27,7 @@ int main()
 		printf("   CHIP ID: %s\n", dev.chr);
 	}
 
+#ifdef SU_CIPHER_AVAILABLE
 	// Test SU_CIPHER_Init
 	printf("\n2. Testing SU_CIPHER_Init...\n");
 	ret = SU_CIPHER_Init();
@@ -46,6 +47,7 @@ int main()
 	}
 
 	// Test SU_CIPHER_CreateHandle
+	int handle;
 	printf("\n4. Testing SU_CIPHER_CreateHandle...\n");
 	handle = SU_CIPHER_CreateHandle();
 	if (handle < 0) {
@@ -55,7 +57,7 @@ int main()
 	}
 
 	// Test SU_CIPHER_ConfigHandle
-	printf("\n5. Testing SU_CIPHER_ConfigHandle...\n");
+	IN_UNF_CIPHER_CTRL ctrl;
 	memset(&ctrl, 0, sizeof(IN_UNF_CIPHER_CTRL));
 	ctrl.key[0] = 0x11223344;
 	ctrl.key[1] = 0x55667788;
@@ -71,6 +73,7 @@ int main()
 	ctrl.enWorkMode = IN_UNF_CIPHER_WORK_MODE_ECB;
 	ctrl.enKeyLen = IN_UNF_CIPHER_KEY_AES_128BIT;
 
+	printf("\n5. Testing SU_CIPHER_ConfigHandle...\n");
 	printf("   Configuration parameters:\n");
 	printf("   - Key: 0x%08x 0x%08x 0x%08x 0x%08x\n", 
 		ctrl.key[0], ctrl.key[1], ctrl.key[2], ctrl.key[3]);
@@ -92,6 +95,10 @@ int main()
 	}
 
 	// Test SU_CIPHER_Encrypt
+	unsigned int src_data[4] = {0x12345678, 0x87654321, 0x11223344, 0x44332211};
+	unsigned int enc_data[4] = {0};
+	unsigned int dec_data[4] = {0};
+
 	printf("\n6. Testing SU_CIPHER_Encrypt...\n");
 	printf("   Original data: 0x%08x 0x%08x 0x%08x 0x%08x\n", 
 		src_data[0], src_data[1], src_data[2], src_data[3]);
@@ -159,6 +166,9 @@ int main()
 	} else {
 		printf("   SU_CIPHER_Exit success\n");
 	}
+#else
+	printf("\n2. SU_CIPHER functions not available in this build\n");
+#endif
 
 	printf("\n==============================================\n");
 	printf("Testing completed\n");
