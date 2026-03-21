@@ -65,5 +65,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: libimp-samples-musl
-        path: ${ GITHUB_WORKSPACE }
+        path: $GITHUB_WORKSPACE
         retention-days: 7
