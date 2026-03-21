@@ -32,6 +32,13 @@ jobs:
         git submodule update --init --recursive
         echo "nproc:$(nproc)"
 
+    - name: Set reusable strings
+      # 将重复的输入字符串（如构建输出目录）转换为步骤输出。这些步骤输出可以在整个工作流文件中使用。
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        
     - name: Install MIPS cross-compiler
       if: matrix.target_arch == 'mipsel'
       run: |
@@ -59,11 +66,16 @@ jobs:
     - name: clear build directory
       run: |
         ls -ltr $GITHUB_WORKSPACE
+        mkdir ../build
+        mv $GITHUB_WORKSPACE/* ../build/
+        mv build $GITHUB_WORKSPACE/
+        ls -ltr $GITHUB_WORKSPACE
+        ls -ltr $GITHUB_WORKSPACE/build/
 
     - name: Upload build artifacts
       if: success()
       uses: actions/upload-artifact@v4
       with:
         name: libimp-samples-musl
-        path: $GITHUB_WORKSPACE
+        path: ${{ steps.strings.outputs.build-output-dir }}
         retention-days: 7
