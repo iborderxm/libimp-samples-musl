@@ -65,10 +65,15 @@ jobs:
         
     - name: clear build directory
       run: |
-        ls -ltr $GITHUB_WORKSPACE
-        mkdir ../build
-        mv $GITHUB_WORKSPACE/* ../build/
-        mv build $GITHUB_WORKSPACE/
+        cd $GITHUB_WORKSPACE
+        ls -ltr
+        cd ../
+        mkdir build
+        cd build
+        mv $GITHUB_WORKSPACE/* ./
+        ls -ltr
+        cd $GITHUB_WORKSPACE
+        mv ../build ./
         ls -ltr $GITHUB_WORKSPACE
         ls -ltr $GITHUB_WORKSPACE/build/
 
